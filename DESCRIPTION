@@ -1,6 +1,6 @@
-Package: mcmc.sim
+Package: bayesian.simulations
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Bayesian Methods for Calibrating Simulation Sets
 Version: 0.2.2
 Author: Who wrote it
 Maintainer: Anthony Todd Fojo <anthony.fojo@jhmi.edu>
