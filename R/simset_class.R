@@ -247,9 +247,9 @@ setMethod('extract.simset',
                   }),
                   n.sim=length(keep.simulation.indices),
                   n.parameters=object@n.var,
-                  parameter.transformations=object@control@transformations)
-               #   parameter.lower.bounds=object@control@lower.bounds,
-               #   parameter.upper.bounds=object@control@upper.bounds)
+                  parameter.transformations=object@transformations)
+               #   parameter.lower.bounds=object@lower.bounds,
+               #   parameter.upper.bounds=object@upper.bounds)
           })
 
 

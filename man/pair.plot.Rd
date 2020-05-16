@@ -6,7 +6,7 @@
 \usage{
 pair.plot(
   mcmc,
-  var.names = mcmc@control@var.names,
+  var.names = mcmc@var.names,
   chains = 1:mcmc@n.chains,
   additional.burn = 0,
   additional.thin = 1,

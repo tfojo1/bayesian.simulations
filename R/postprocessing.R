@@ -9,7 +9,7 @@
 #'
 #'@export
 trace.plot <- function(mcmc,
-                       var.names=mcmc@control@var.names,
+                       var.names=mcmc@var.names,
                        chains = 1:mcmc@n.chains,
                        additional.burn=0,
                        additional.thin=1,
@@ -50,7 +50,7 @@ trace.plot <- function(mcmc,
 #'
 #'@export
 pair.plot <- function(mcmc,
-                       var.names=mcmc@control@var.names,
+                       var.names=mcmc@var.names,
                        chains = 1:mcmc@n.chains,
                        additional.burn=0,
                        additional.thin=1,
@@ -90,10 +90,10 @@ density.plot <- function(mcmc)
 
 #'@export
 acceptance.plot <- function(mcmc,
-                            window.iterations=ceiling(200/mcmc@control@thin),
+                            window.iterations=ceiling(200/mcmc@thin),
                             by.block=F,
                             aggregate.chains=F,
-                            blocks=mcmc@control@sample.steps,
+                            blocks=mcmc@sample.steps,
                             exact.block.names=F)
 {
     if (by.block)
@@ -129,8 +129,8 @@ acceptance.plot <- function(mcmc,
     else
         rv = ggplot2::ggplot(df, ggplot2::aes(iteration, value))
 
-    if (.hasSlot(mcmc@control, 'target.acceptance.probability'))
-        rv = rv + ggplot2::geom_hline(yintercept = mcmc@control@target.acceptance.probability, linetype='dashed')
+#    if (.hasSlot(mcmc@control, 'target.acceptance.probability'))
+#        rv = rv + ggplot2::geom_hline(yintercept = mcmc@control@target.acceptance.probability, linetype='dashed')
 
     rv = rv + ggplot2::geom_line()
 
@@ -192,10 +192,10 @@ likelihood.plot <- function(mcmc,
 #'
 #'@return Returns an array indexed [chain,iteration,block]. If by.block==T, then there is one value of block for each var.block. If by.block==F, then there is only a single value of block ('all'). The values of the array represent the cumulative fraction of transitions that have been accepted from the end of the burn period up to and including the current iteration (including thinned transitions)
 get.cumulative.acceptance.rates <- function(mcmc,
-                                               window.iterations=ceiling(200/mcmc@control@thin),
+                                               window.iterations=ceiling(200/mcmc@thin),
                                                by.block=F,
                                                aggregate.chains=F,
-                                               blocks=mcmc@control@sample.steps,
+                                               blocks=mcmc@sample.steps,
                                                exact.block.names=F)
 {
     blocks = match.block.names(mcmc, blocks, exact.block.names)
@@ -242,7 +242,7 @@ get.cumulative.acceptance.rates <- function(mcmc,
 get.total.acceptance.rate <- function(mcmc,
                                   by.block=F,
                                   aggregate.chains=T,
-                                  blocks=mcmc@control@sample.steps,
+                                  blocks=mcmc@sample.steps,
                                   exact.block.names=F)
 {
     blocks = match.block.names(mcmc, blocks, exact.block.names)
@@ -358,14 +358,14 @@ get.rhats <- function(mcmc,
 ##-- HELPERS --##
 get.n.unthinned.by.block <- function(mcmc)
 {
-    dim.names = list(chain=1:mcmc@n.chains, iteration=1:mcmc@n.iter, block=mcmc@control@sample.steps)
+    dim.names = list(chain=1:mcmc@n.chains, iteration=1:mcmc@n.iter, block=mcmc@sample.steps)
     rv = array(0, dim=sapply(dim.names, length), dimnames=dim.names)
-    n.blocks = length(mcmc@control@sample.steps)
+    n.blocks = length(mcmc@sample.steps)
 
     for (chain in 1:mcmc@n.chains)
     {
         counts = t(sapply(1:mcmc@n.iter, function(iter){
-            raw.counts = 1 + ((mcmc@first.step.for.iter[iter] - 2 + 1:mcmc@control@thin) %% n.blocks)
+            raw.counts = 1 + ((mcmc@first.step.for.iter[iter] - 2 + 1:mcmc@thin) %% n.blocks)
             sapply(1:n.blocks, function(block){
                 sum(raw.counts==block)
             })

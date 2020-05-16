@@ -12,6 +12,10 @@
 ##-- MASTER CLASS DEFINITIONS --##
 ##------------------------------##
 
+#'@importClassesFrom distributions Distribution
+setClassUnion('Distribution_or_function',
+              members=c('Distribution',
+                        'function'))
 
 setClass('mcmcsim_control',
          representation=list(var.names='character',
@@ -22,7 +26,7 @@ setClass('mcmcsim_control',
                              simulation.function='function',
                              pass.chain.to.simulation.function='logical',
                              pass.iteration.to.simulation.function='logical',
-                             log.prior.distribution='function',
+                             log.prior.distribution='Distribution_or_function',
                              log.likelihood='function',
                              transformations='list',
                              lower.bounds='numeric',
@@ -30,9 +34,16 @@ setClass('mcmcsim_control',
                              sample.steps='character'))
 
 setClass('mcmcsim',
-         representation=list(control='mcmcsim_control',
-                             var.names='character',
+         representation=list(var.names='character',
                              n.var='integer',
+                             method='character',
+                             thin='integer',
+                             burn='integer',
+                             transformations='list',
+                             lower.bounds='numeric',
+                             upper.bounds='numeric',
+                             sample.steps='character',
+
                              simulations='list',
                              simulation.indices='matrix',
                              samples='array',
@@ -89,23 +100,6 @@ setGeneric("create.initial.chain.state", function(control,
     standardGeneric("create.initial.chain.state")
 })
 
-##-------------------------------------------------------------------##
-##-- CLASS METHODS THAT *MAY* BE OVERRIDDEN AT THE SUB-CLASS LEVEL --##
-##-------------------------------------------------------------------##
-
-#'@title Check whether mcmc objects resulting from two mcmcsim_control objects can be merged
-#'@return If the two controls are merge-able, returns an empty character vector. Otherwise, returns a vector of the reasons why the two cannot be merged
-#'@export
-setGeneric("check.merge.controls", function(c1, c2, for.serial.merge=T)
-{
-    standardGeneric('check.merge.controls')
-})
-setMethod("check.merge.controls",
-          signature(c1='mcmcsim_control', c2='mcmcsim_control'),
-          def = function(c1, c2, for.serial.merge=T)
-{
-    do.check.merge.controls(c1, c2, for.serial.merge)
-})
 
 
 
@@ -114,12 +108,22 @@ setMethod("check.merge.controls",
 ##--------------------------##
 
 
-# Creates a skeleton MCMC object in which to put samples
-create.skeleton.mcmc <- function(control,
-                                 n.iter,
-                                 n.chains=1,
-                                 class.name='mcmcsim',
-                                 ...)
+setMethod("initialize",
+          signature(.Object='mcmcsim'),
+          def=function(.Object,
+                       control,
+                       n.iter,
+                       n.chains,
+                       var.names=model@var.names,
+                       n.var=model@n.var,
+                       method=model@method,
+                       thin=model@thin,
+                       burn=model@burn,
+                       transformations=model@transformations,
+                       lower.bounds=model@lower.bounds,
+                       upper.bounds=model@upper.bounds,
+                       sample.steps=model@sample.steps,
+                       model=NULL)
 {
     # Set array names
     if (n.iter==0)
@@ -127,9 +131,9 @@ create.skeleton.mcmc <- function(control,
     else
         iterations.name = 1:n.iter
 
-    sample.dimnames = list(chain=1:n.chains, iteration=iterations.name, variable=control@var.names)
+    sample.dimnames = list(chain=1:n.chains, iteration=iterations.name, variable=var.names)
     sim.index.dimnames = sample.dimnames[1:2]
-    n.accepted.dimnames = list(chain=1:n.chains, iteration=iterations.name, step=control@sample.steps)
+    n.accepted.dimnames = list(chain=1:n.chains, iteration=iterations.name, step=sample.steps)
 
     # Make data structures
     simulation.indices = matrix(as.integer(NA), nrow=n.chains, ncol=n.iter, dimnames=sim.index.dimnames)
@@ -141,47 +145,58 @@ create.skeleton.mcmc <- function(control,
     first.step.for.iter = matrix(as.integer(NA), nrow=n.chains, ncol=n.iter, dimnames=sim.index.dimnames)
 
     run.times.in.burn = rep(as.numeric(0), n.chains)
-    n.accepted.in.burn = matrix(as.integer(0), nrow=n.chains, ncol=length(control@sample.steps),
-                                dimnames=list(chain=1:n.chains, step=control@sample.steps))
+    n.accepted.in.burn = matrix(as.integer(0), nrow=n.chains, ncol=length(sample.steps),
+                                dimnames=list(chain=1:n.chains, step=sample.steps))
     total.run.time = rep(as.numeric(NA), n.chains)
     simulations = list()
 
     # Package and return
-    new(Class = class.name,
-        control=control,
-        var.names=control@var.names,
-        n.var=control@n.var,
-        simulations=simulations,
-        simulation.indices=simulation.indices,
-        samples=samples,
-        log.likelihoods=log.likelihoods,
-        log.priors=log.priors,
-        n.chains=as.integer(n.chains),
-        n.iter=as.integer(n.iter),
-        n.accepted=n.accepted,
-        first.step.for.iter=first.step.for.iter,
-        run.times=run.times,
-        n.accepted.in.burn=n.accepted.in.burn,
-        run.times.in.burn=run.times.in.burn,
-        total.run.time=total.run.time)
-}
+    callNextMethod(.Object,
+                   var.names=var.names,
+                   n.var=n.var,
+                   method=method,
+                   thin=thin,
+                   burn=burn,
+                   transformations=transformations,
+                   lower.bounds=lower.bounds,
+                   upper.bounds=upper.bounds,
+                   sample.steps=sample.steps,
 
-create.mcmcsim.control <- function(class.name,
-                                   var.names,
-                                   method,
-                                   simulation.function,
-                                   pass.chain.to.simulation.function,
-                                   pass.iteration.to.simulation.function,
-                                   log.prior.distribution,
-                                   log.likelihood,
-                                   thin,
-                                   burn,
-                                   transformations,
-                                   sample.steps,
-                                   ...)
+                   simulations=simulations,
+                   simulation.indices=simulation.indices,
+                   samples=samples,
+                   log.likelihoods=log.likelihoods,
+                   log.priors=log.priors,
+                   n.chains=as.integer(n.chains),
+                   n.iter=as.integer(n.iter),
+                   n.accepted=n.accepted,
+                   first.step.for.iter=first.step.for.iter,
+                   run.times=run.times,
+                   n.accepted.in.burn=n.accepted.in.burn,
+                   run.times.in.burn=run.times.in.burn,
+                   total.run.time=total.run.time)
+})
+
+setMethod("initialize",
+          signature(.Object='mcmcsim_control'),
+          def=function(.Object,
+                       var.names,
+                       method,
+                       simulation.function,
+                       pass.chain.to.simulation.function,
+                       pass.iteration.to.simulation.function,
+                       log.prior.distribution,
+                       log.likelihood,
+                       thin,
+                       burn,
+                       transformations,
+                       sample.steps,
+                       ...)
 {
     #process transformations
     transformations = process.transformations(var.names, transformations)
+
+    #do we need to check sample steps against var names?
 
     if (thin < 1)
         stop("thin must be >= 1")
@@ -189,29 +204,32 @@ create.mcmcsim.control <- function(class.name,
     if (burn<0)
         stop("burn must be >= 0")
 
-    new(Class=class.name,
-        var.names=var.names,
-        n.var=length(var.names),
-        method=method,
-        simulation.function=simulation.function,
-        pass.chain.to.simulation.function=pass.chain.to.simulation.function,
-        pass.iteration.to.simulation.function=pass.iteration.to.simulation.function,
-        log.prior.distribution=log.prior.distribution,
-        log.likelihood=log.likelihood,
-        thin=thin,
-        burn=burn,
-        transformations=transformations,
-        sample.steps=sample.steps,
-        ...
+    callNextMethod(.Object,
+                   var.names=var.names,
+                   n.var=length(var.names),
+                   method=method,
+                   simulation.function=simulation.function,
+                   pass.chain.to.simulation.function=pass.chain.to.simulation.function,
+                   pass.iteration.to.simulation.function=pass.iteration.to.simulation.function,
+                   log.prior.distribution=log.prior.distribution,
+                   log.likelihood=log.likelihood,
+                   thin=thin,
+                   burn=burn,
+                   transformations=transformations,
+                   sample.steps=sample.steps,
+                   ...
     )
-}
+})
 
-
-create.new.mcmcsim.chain.state <- function(class.name, current.parameters, ...)
+setMethod("initialize",
+          signature(.Object='mcmcsim_chainstate'),
+          def=function(.Object,
+                       current.parameters,
+                       ...)
 {
-    new(Class=class.name,
-        current.parameters=current.parameters,
-        n.unthinned.after.burn=as.integer(0),
-        n.unthinned.burned=as.integer(0),
-        ...)
-}
+    callNextMethod(.Object,
+                   current.parameters=current.parameters,
+                   n.unthinned.after.burn=as.integer(0),
+                   n.unthinned.burned=as.integer(0),
+                   ...)
+})

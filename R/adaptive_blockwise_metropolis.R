@@ -38,28 +38,18 @@ setMethod("create.initial.chain.state",
 function(control, start.parameters)
 {
     start.parameters = check.variable.names(start.parameters, desired.names=control@var.names)
-    create.new.mcmcsim.chain.state('adaptive_blockwise_metropolis_chain_state',
-                                   current.parameters=start.parameters,
-                                   cov.mat=control@initial.covariance.mat,
-                                   mean.transformed.parameters=do.transform.parameters(control, start.parameters),
-                                   log.scaling.parameters=lapply(control@initial.scaling.parameters, log),
-                                   block=as.integer(0),
-                                   n.accepted=sapply(control@sample.steps, function(step){as.integer(0)}),
-                                   run.time=as.numeric(0),
-                                   first.step.for.iter=as.integer(NA)
-                                   )
+    new('adaptive_blockwise_metropolis_chain_state',
+        current.parameters=start.parameters,
+        cov.mat=control@initial.covariance.mat,
+        mean.transformed.parameters=do.transform.parameters(control, start.parameters),
+        log.scaling.parameters=lapply(control@initial.scaling.parameters, log),
+        block=as.integer(0),
+        n.accepted=sapply(control@sample.steps, function(step){as.integer(0)}),
+        run.time=as.numeric(0),
+        first.step.for.iter=as.integer(NA)
+    )
 })
 
-setMethod("check.merge.controls",
-          signature(c1='adaptive_blockwise_metropolis_control', c2='adaptive_blockwise_metropolis_control'),
-function(c1, c2, for.serial.merge)
-{
-    errors = do.check.merge.controls(c1, c2, for.serial.merge=for.serial.merge)
-
-    #Do we want to check all the other parameters?
-
-    errors
-})
 
 #'@export
 create.metropolis.control <- function(var.names,
@@ -192,32 +182,32 @@ create.adaptive.blockwise.metropolis.control <- function(var.names,
         stop('adaptive.scaling.update.decay must be between zero and one')
 
     # Create the control
-    create.mcmcsim.control(class.name='adaptive_blockwise_metropolis_control',
-                           var.names=var.names,
-                           method='adaptive.blockwise.metropolis',
-                           simulation.function=simulation.function,
-                           pass.chain.to.simulation.function=pass.chain.to.simulation.function,
-                           pass.iteration.to.simulation.function=pass.iteration.to.simulation.function,
-                           log.prior.distribution=log.prior.distribution,
-                           log.likelihood=log.likelihood,
-                           thin=cast.to.integer(thin),
-                           burn=cast.to.integer(burn),
-                           transformations=transformations,
-                           sample.steps=names(var.blocks),
-                           n.blocks=length(var.blocks),
-                           var.blocks=var.blocks,
-                           initial.covariance.mat=initial.covariance.mat,
-                           n.iter.before.use.adaptive.covariance=n.iter.before.use.adaptive.covariance,
-                           adaptive.covariance.base.update=adaptive.covariance.base.update,
-                           adaptive.covariance.update.prior.iter=adaptive.covariance.update.prior.iter,
-                           adaptive.covariance.update.decay=adaptive.covariance.update.decay,
-                           initial.scaling.parameters=initial.scaling.parameters,
-                           adaptive.scaling=adaptive.scaling,
-                           adaptive.scaling.base.update=adaptive.scaling.base.update,
-                           adaptive.scaling.update.prior.iter=adaptive.scaling.update.prior.iter,
-                           adaptive.scaling.update.decay=adaptive.scaling.update.decay,
-                           reset.adaptive.scaling.update.after=as.integer(floor(reset.adaptive.scaling.update.after)),
-                           target.acceptance.probability=target.acceptance.probability)
+    new('adaptive_blockwise_metropolis_control',
+        var.names=var.names,
+        method='adaptive.blockwise.metropolis',
+        simulation.function=simulation.function,
+        pass.chain.to.simulation.function=pass.chain.to.simulation.function,
+        pass.iteration.to.simulation.function=pass.iteration.to.simulation.function,
+        log.prior.distribution=log.prior.distribution,
+        log.likelihood=log.likelihood,
+        thin=cast.to.integer(thin),
+        burn=cast.to.integer(burn),
+        transformations=transformations,
+        sample.steps=names(var.blocks),
+        n.blocks=length(var.blocks),
+        var.blocks=var.blocks,
+        initial.covariance.mat=initial.covariance.mat,
+        n.iter.before.use.adaptive.covariance=n.iter.before.use.adaptive.covariance,
+        adaptive.covariance.base.update=adaptive.covariance.base.update,
+        adaptive.covariance.update.prior.iter=adaptive.covariance.update.prior.iter,
+        adaptive.covariance.update.decay=adaptive.covariance.update.decay,
+        initial.scaling.parameters=initial.scaling.parameters,
+        adaptive.scaling=adaptive.scaling,
+        adaptive.scaling.base.update=adaptive.scaling.base.update,
+        adaptive.scaling.update.prior.iter=adaptive.scaling.update.prior.iter,
+        adaptive.scaling.update.decay=adaptive.scaling.update.decay,
+        reset.adaptive.scaling.update.after=as.integer(floor(reset.adaptive.scaling.update.after)),
+        target.acceptance.probability=target.acceptance.probability)
 }
 
 check.and.get.initial.scaling.parameters <- function(initial.scaling.parameters, var.blocks)
@@ -321,6 +311,15 @@ function(control,
     # Storing simulations and samples
     n.unique.sim = 0
 
+    ##--------------------##
+    ##-- Pull Log Prior --##
+    ##--------------------##
+
+    if (is(control@log.prior.distribution, 'Distribution'))
+        log.prior = get.density.function(control@log.prior, default.log = T)
+    else
+        log.prior = control@log.prior.distribution
+
     ##--------------------------##
     ##-- Set Up Initial State --##
     ##--------------------------##
@@ -342,7 +341,7 @@ function(control,
     else
         current.sim = initial.sim
 
-    current.log.prior = control@log.prior.distribution(chain.state@current.parameters)
+    current.log.prior = log.prior(chain.state@current.parameters)
     if (current.log.prior == -Inf)
         stop("The log prior at the starting state evaluates to -Inf. You must pick another starting state.")
 
@@ -361,9 +360,10 @@ function(control,
 
     n.keep = max(0,floor((n.iter-to.burn.this.time)/control@thin))
 
-    rv = create.skeleton.mcmc(control=control,
-                              n.iter=n.keep,
-                              n.chains=1)
+    rv = new('mcmcsim',
+             model=control,
+             n.iter=n.keep,
+             n.chains=1)
 
     ##--------------------------------------------##
     ##-- SET UP FOR UPDATING SCALING PARAMETERS --##
@@ -482,7 +482,7 @@ function(control,
 
         proposed.parameters = do.reverse.transform.parameters(control, proposed.transformed.parameters)
 
-        proposed.log.prior = control@log.prior.distribution(proposed.parameters)
+        proposed.log.prior = log.prior(proposed.parameters)
 
         if (print.updates && update.detail=='very_high')
         {

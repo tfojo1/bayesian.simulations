@@ -55,7 +55,7 @@ do.subset.mcmc <- function(mcmc,
 match.var.names <- function(mcmc, var.names, exact.var.names)
 {
     do.match.names(to.match=var.names,
-                   possible.matches=mcmc@control@var.names,
+                   possible.matches=mcmc@var.names,
                    exact=exact.var.names,
                    to.match.name='var.names',
                    category.descriptor='variable')
@@ -64,7 +64,7 @@ match.var.names <- function(mcmc, var.names, exact.var.names)
 match.block.names <- function(mcmc, block.names, exact.block.names)
 {
     do.match.names(to.match=block.names,
-                   possible.matches=mcmc@control@sample.steps,
+                   possible.matches=mcmc@sample.steps,
                    exact=exact.block.names,
                    to.match.name='block.names',
                    category.descriptor='block')
@@ -74,7 +74,7 @@ match.block.names <- function(mcmc, block.names, exact.block.names)
 match.step.names <- function(mcmc, step.names, exact.step.names)
 {
     do.match.names(to.match=step.names,
-                   possible.matches=mcmc@control@sample.steps,
+                   possible.matches=mcmc@sample.steps,
                    exact=exact.step.names,
                    to.match.name='step.names',
                    category.descriptor='step')

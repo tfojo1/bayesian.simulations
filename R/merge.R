@@ -43,26 +43,26 @@ mcmc.merge.serial <- function(...)
     if (length(unique(chains.per))>1)
         stop("All elements of mcmc.objects must have the same number of chains")
 
-    # Check that controls are mergable
-    c1 = mcmc.objects[[1]]@control
+    # Check that mcmcs are mergable
     sapply(2:length(mcmc.objects), function(i){
-        errors = check.merge.controls(c1, mcmc.objects[[i]]@control)
+        errors = check.mcmc.mergeable(mcmc.objects[[1]], mcmc.objects[[i]])
         if (length(errors)>0)
             stop(paste0("Unable to merge the ",
                         get.ordinal(i),
-                        " mcmc object with those prior. The controls are incompatible: ",
+                        " mcmc object with those prior: ",
                         paste0(errors, collapse=', ')))
     })
 
     # MCMC variables
     n.iter = sum(sapply(mcmc.objects, function(mcmc){mcmc@n.iter}))
     n.chains = mcmc.objects[[1]]@n.chains
-    n.var = c1@n.var
+    n.var = mcmc.objects[[1]]@n.var
 
     # Set up RV data structure
-    rv = create.skeleton.mcmc(c1,
-                              n.iter=n.iter,
-                              n.chains=n.chains)
+    rv = new('mcmcsim', model=mcmc.objects[[1]],
+             n.iter=n.iter,
+             n.chains=n.chains)
+
 
     #Loop through and merge
     sim.counter = 0
@@ -170,10 +170,9 @@ mcmc.merge.parallel <- function(...)
     if (length(unique(iter.per))>1)
         stop("All elements of mcmc.objects must have the same number of iterations")
 
-    # Check that controls are mergable
-    c1 = mcmc.objects[[1]]@control
+    # Check that mcmcs are mergable
     sapply(2:length(mcmc.objects), function(i){
-        errors = check.merge.controls(c1, mcmc.objects[[i]]@control)
+        errors = check.mcmc.mergeable(mcmc.objects[[1]], mcmc.objects[[i]])
         if (length(errors)>0)
             stop(paste0("Unable to merge the ",
                         get.ordinal(i),
@@ -181,15 +180,16 @@ mcmc.merge.parallel <- function(...)
                         paste0(errors, collapse=', ')))
     })
 
+
     # MCMC variables
     n.iter = mcmc.objects[[1]]@n.iter
     n.chains = sum(sapply(mcmc.objects, function(mcmc){mcmc@n.chains}))
-    n.var = c1@n.var
+    n.var = mcmc.objects[[1]]@n.var
 
     # Set up RV data structure
-    rv = create.skeleton.mcmc(c1,
-                              n.iter=n.iter,
-                              n.chains=n.chains)
+    rv = new('mcmcsim', model=mcmc.objects[[1]],
+             n.iter=n.iter,
+             n.chains=n.chains)
 
     #Loop through and merge
     sim.counter = 0
@@ -246,33 +246,33 @@ mcmc.merge.parallel <- function(...)
 ##-- CHECKING IF OK TO MERGE --##
 ##-----------------------------##
 
-do.check.merge.controls <- function(c1, c2, for.serial.merge)
+
+check.mcmc.mergeable <- function(mcmc1, mcmc2)
 {
     errors = character()
-    # Class
-    if (!all(class(c1)==class(c2)))
-        errors = c(errors, "Control classes do not match")
 
     # Vars
-    if (c1@n.var != c2@n.var || any(c1@var.names != c2@var.names))
+    if (mcmc1@n.var != mcmc2@n.var)
+        errors = c(errors, "Different number of variables")
+    else if (any(mcmc1@var.names != mcmc2@var.names))
         errors = c(errors, "Variable names do not match")
 
     # Method
-    if (any(c1@method != c2@method))
+    if (length(mcmc1@method) != length(mcmc2@method) || any(mcmc1@method != mcmc2@method))
         errors = c(errors, "Methods are not the same")
 
     # Thin
-    if (c1@thin != c2@thin)
+    if (mcmc1@thin != mcmc2@thin)
         errors = c(errors, "Thinning is not the same")
 
     # Burn
-    if (c1@burn != c2@burn)
+    if (mcmc1@burn != mcmc2@burn)
         errors = c(errors, "Burn is not the same")
 
     # Sample steps
-    if (length(c1@sample.steps) != length(c2@sample.steps))
+    if (length(mcmc1@sample.steps) != length(mcmc2@sample.steps))
         errors = c(errors, "Different number of sample steps")
-    else if (any(c1@sample.steps != c2@sample.steps))
+    else if (any(mcmc1@sample.steps != mcmc2@sample.steps))
         errors = c(errors, "Sample steps are not the same")
 
     # Return
