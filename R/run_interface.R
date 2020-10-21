@@ -232,7 +232,7 @@ run.mcmc.from.cache <- function(dir,
     #-- Check chains --#
     if (is.null(chains))
         chains = 1:global.control@n.chains
-    else if (length(setdiff(chains, 1:global.control@chains))>0)
+    else if (length(setdiff(chains, 1:global.control@n.chains))>0)
         stop(paste0("chains must include only numbers from 1 to ", global.control@n.chains))
 
     #-- Check cores argument --#
@@ -441,10 +441,14 @@ parse.mcmc.arguments <- function(control,
                     all(dimnames(starting.values)[[2]] != name)
                 })]
 
-                if (length(missing.var.names)>0)
+                if (length(missing.var.names)>1)
                     stop(paste0("The following variables are not present among the named ",
                                 col.or.val, "s in starting.values: ",
-                                paste0("'", missing.var.names, "'", ', ')))
+                                paste0("'", missing.var.names, "'", collapse=', ')))
+                else if (length(missing.var.names)==1)
+                    stop(paste0("The following variable is not present among the named ",
+                                col.or.val, "s in starting.values: ",
+                                "'", missing.var.names, "'"))
             }
 
             n.chains = dim(starting.values)[1]

@@ -464,6 +464,18 @@ do.assemble.multiple.chains.from.cache <- function(dir,
 ##-- CHECKING CACHE STATUS --##
 ##---------------------------##
 
+#'@title Check if a cached MCMC has completed sampling
+#'
+#'@param dir The cache directory
+#'
+#'@return A boolean indicator of whether the cache is done sampling
+#'
+#'@export
+is.mcmc.cache.complete <- function(dir)
+{
+    is.cache.complete(dir)
+}
+
 
 is.cache.complete <- function(dir, global.control=NULL, chains=NULL)
 {
@@ -482,7 +494,7 @@ is.cache.complete <- function(dir, global.control=NULL, chains=NULL)
         stop(paste0("chains must include only numbers from 1 to ", global.control@n.chains))
 
     # Check each chain
-    for (chain in 1:chains)
+    for (chain in chains)
     {
         chain.control = get.cache.chain.control(dir, global.control, chain)
         if (!all(chain.control@chunk.done))

@@ -351,7 +351,7 @@ function(control,
     current.transformed.parameters = do.transform.parameters(control, chain.state@current.parameters)
 
     if (current.log.likelihood==-Inf)
-        output.stream("WARNING: The log likelihood at the starting state evaluates to -Inf. Consider starting in a higher-likelihood region\n")
+        stop("The log likelihood at the starting state evaluates to -Inf. You must pick another starting state.")
 
 
     ##---------------------------------##

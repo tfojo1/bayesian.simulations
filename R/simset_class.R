@@ -198,12 +198,12 @@ setGeneric('extract.simset', function(object, ...){
 setMethod('extract.simset',
           signature(object='mcmcsim'),
           def=function(object,
-                       chains=1:mcmc@n.chains,
+                       chains=1:object@n.chains,
                        additional.burn=0,
                        additional.thin=1)
           {
               #Check arguments
-              chains = check.chains(object, chains)
+              chains = check.chains(mcmc=object, chains=chains)
 
               if (additional.burn < 0 || additional.burn >= object@n.iter)
                   stop("'additional.burn' must be >= 0 and < the number of iteration in the MCMC object (",
