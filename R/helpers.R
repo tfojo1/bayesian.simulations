@@ -1,4 +1,5 @@
 
+##-----------------------------##
 ##-- SUBSETTING MCMC SAMPLES --##
 ##-----------------------------##
 
@@ -27,6 +28,12 @@ do.subset.mcmc <- function(mcmc,
     keep.mask = ((1:mcmc@n.iter) > additional.burn) &
         ((1:mcmc@n.iter-additional.burn) %% additional.thin == 0)
 
+    # Map the first iteration in each group of iterations that will be 'thinned together'
+    max.keep = max((1:mcmc@n.iter)[keep.mask])
+    first.in.thin.group.mask = ((1:mcmc@n.iter) > additional.burn) &
+        ((1:mcmc@n.iter-additional.burn) %% additional.thin == 1) &
+        ((1:mcmc@n.iter) <= max.keep)
+
     if (sum(keep.mask)==0)
         stop(paste0("No simulations are available after applying an additional burn of ",
                     additional.burn, " and an additional thin of ", additional.thin))
@@ -45,7 +52,9 @@ do.subset.mcmc <- function(mcmc,
 
     list(samples=samples,
          simulation.indices=simulation.indices,
-         n.iter=sum(keep.mask))
+         n.iter=sum(keep.mask),
+         keep.mask = keep.mask,
+         first.in.thin.group.mask = first.in.thin.group.mask)
 }
 
 ##--------------------##

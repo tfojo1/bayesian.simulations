@@ -327,6 +327,56 @@ setMethod("extract.simset.parameter.distribution",
           })
 
 
+##------------------------##
+##-- SUBSETTING SIMSETS --##
+##------------------------##
+
+#'@export
+setGeneric("subset.simset",
+           def=function(simset, indices){
+               standardGeneric("subset.simset")
+           })
+setMethod("subset.simset",
+          signature(simset="simset"),
+def=function(simset, indices){
+    simset@simulations = simset@simulations[indices]
+    simset@n.sim = length(simset@simulations)
+    simset@weights = simset@weights[indices]
+    simset@parameters = simset@parameters[indices,]
+
+    simset
+})
+
+#'@export
+setGeneric("thin.simset",
+           def=function(simset, thin){
+               standardGeneric("thin.simset")
+           })
+setMethod("thin.simset",
+          signature(simset="simset"),
+def=function(simset, thin)
+{
+    if (any(round(simset@weights) != simset@weights))
+        stop("thin.simset can only be called when all weights are integers")
+
+    if (thin <= 0)
+        stop("thin must be >= 1")
+    if (thin >sum(simset@weights))
+        stop(paste0("A thin of ", thin, " will leave no simulations in the thinned simset"))
+
+    expanded.indices = unlist(sapply(1:simset@n.sim, function(i){
+        rep(i, simset@weights[i])
+    }))
+
+    keep.expanded.indices.mask = ((1:length(expanded.indices)) %% thin) == 0
+    keep.indices = unique(expanded.indices[keep.expanded.indices.mask])
+    keep.index.weights = as.numeric(table(expanded.indices[keep.expanded.indices.mask]))
+
+    simset = subset.simset(simset, keep.indices)
+    simset@weights = keep.index.weights
+
+    simset
+})
 ##-----------------------##
 ##-- EXTENDING SIMSETS --##
 ##-----------------------##

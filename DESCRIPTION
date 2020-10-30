@@ -23,4 +23,4 @@ Collate:
     'postprocessing.R'
     'output.R'
 Imports: mvtnorm, ggplot2, parallel, reshape2, distributions, lhs
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.1
