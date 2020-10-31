@@ -251,14 +251,14 @@ setMethod("initialize",
 #'@return An mcmc.sim object
 #'
 #'@export
-setGeneric("mcmc.subset",
+setGeneric("subset.mcmc",
            def=function(.Object,
                         chains=1:.Object@n.chains,
                         additional.burn=0,
                         additional.thin=1){
-               standardGeneric("mcmc.subset")
+               standardGeneric("subset.mcmc")
            })
-setMethod("mcmc.subset",
+setMethod("subset.mcmc",
           signature(.Object='mcmcsim'),
 def=function(.Object,
            chains=1:.Object@n.chains,
