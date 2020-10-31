@@ -331,6 +331,15 @@ setMethod("extract.simset.parameter.distribution",
 ##-- SUBSETTING SIMSETS --##
 ##------------------------##
 
+#'@title Subset a simset
+#'
+#'@description Subset a simset by indexing a subset of the included simulations
+#'
+#'@param simset An object of class simset
+#'@param indices Either numeric indices or a logical mask according to which to subset simulations
+#'
+#'@return A new simset object
+#'
 #'@export
 setGeneric("subset.simset",
            def=function(simset, indices){
@@ -347,6 +356,15 @@ def=function(simset, indices){
     simset
 })
 
+#'@title Subset a simset by thinning its simulations
+#'
+#'@description For a simset whose weights are integer values, extracts a subset of the simualtions by thinning every nth simulation (eg, if thin=3, the resulting simset keeps every third simulation). Maintains the weighting - simulations with higher weights are more likely to be kept
+#'
+#'@param simset A simset object
+#'@param thin How much to thin the simulations
+#'
+#'@return A thinned simset object
+#'
 #'@export
 setGeneric("thin.simset",
            def=function(simset, thin){
