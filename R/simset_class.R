@@ -341,11 +341,11 @@ setMethod("extract.simset.parameter.distribution",
 #'@return A new simset object
 #'
 #'@export
-setGeneric("subset.simset",
+setGeneric("simset.subset",
            def=function(simset, indices){
-               standardGeneric("subset.simset")
+               standardGeneric("simset.subset")
            })
-setMethod("subset.simset",
+setMethod("simset.subset",
           signature(simset="simset"),
 def=function(simset, indices){
     simset@simulations = simset@simulations[indices]
@@ -390,7 +390,7 @@ def=function(simset, thin)
     keep.indices = unique(expanded.indices[keep.expanded.indices.mask])
     keep.index.weights = as.numeric(table(expanded.indices[keep.expanded.indices.mask]))
 
-    simset = subset.simset(simset, keep.indices)
+    simset = simset.subset(simset, keep.indices)
     simset@weights = keep.index.weights
 
     simset
