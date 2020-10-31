@@ -18,7 +18,7 @@ subset.mcmc(
 
 \item{additional.burn}{Additional number of iterations to burn off the front (this represents the number of iterations AFTER the thinning which has already been done to the mcmc.sim object but BEFORE applying additional.thin)}
 
-\item{additional.thin}{The factor by which to further thin iterations}
+\item{additional.thin}{The factor by which to further thin iterations (applied to the already thinned simulations)}
 }
 \value{
 An mcmc.sim object
