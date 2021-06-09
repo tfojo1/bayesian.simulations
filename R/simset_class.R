@@ -326,6 +326,41 @@ setMethod("extract.simset.parameter.distribution",
                   stop("Have not yet implemented smoothed distributions. Coming soon")
           })
 
+#'@title Flatten a simset
+#'
+#'@description Flatten a simset such that the weight of each simulation is 1. Simulations in the input simset with weight >1 are repeated multiple times in the returned simset
+#'
+#'@param simset An object of class simset. Must have ony integer-valued weights
+#'
+#'@return A new simset object
+#'
+#'@export
+setGeneric("flatten.simset",
+           def=function(simset){
+               standardGeneric("flatten.simset")
+           })
+setMethod("flatten.simset",
+          signature(simset="simset"),
+def=function(simset){
+    if (any(round(simset@weights) != simset@weights))
+        stop("In order to flatten the simset, all weights must be integers")
+
+    new.indices = unlist(sapply(1:simset@n.sim, function(i){
+        rep(i, simset@weights[i])
+    }))
+
+    new("simset",
+        simulations = simset@simulations[new.indices],
+        parameter.names=simset@parameter.names,
+        n.parameters=simset@n.parameters,
+        parameter.values = simset@parameters[new.indices,],
+        n.sim = length(new.indices),
+        weights = rep(1, length(new.indices)),
+        parameter.transformations = simset@parameter.transformations#,
+#        parameter.lower.bounds = simset@parameter.lower.bounds,
+ #       parameter.upper.bounds = simset@parameter.upper.bounds
+        )
+})
 
 ##------------------------##
 ##-- SUBSETTING SIMSETS --##
