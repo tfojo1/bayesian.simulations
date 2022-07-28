@@ -120,6 +120,9 @@ create.adaptive.blockwise.metropolis.control <- function(var.names,
                                                  desired.names=var.names,
                                                  arg.name.for.error='initial.covariance.mat')
 
+    if (any(diag(initial.covariance.mat)==0))
+        stop("The initial.covariance.mat cannot have zero variance")
+
     # Check that var.blocks is valid
     if (class(var.blocks) != 'list' ||
         length(var.blocks) == 0 ||
@@ -581,6 +584,9 @@ function(control,
             chain.state@cov.mat = chain.state@cov.mat + covariance.update.step *
                 ((current.transformed.parameters - chain.state@mean.transformed.parameters) %*%
                      t(current.transformed.parameters - chain.state@mean.transformed.parameters) - chain.state@cov.mat)
+
+            if (any(diag(chain.state@cov.mat)==0))
+                stop("Fatal Error in Adaptive Metropolis Sampler: The adaptive covariance matrix has developed a zero variance")
         }
 
         #make sure we update the mean AFTER updating the covariance matrix

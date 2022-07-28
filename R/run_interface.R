@@ -418,14 +418,14 @@ parse.mcmc.arguments <- function(control,
     if (is.null(prior.mcmc))
     {
         col.or.val = 'column'
-        if (class(starting.values)=='numeric' || class(starting.values)=='integer')
+        if (is(starting.values, 'numeric') || is(starting.values, 'integer'))
         {
             col.or.val = 'element'
             starting.values = matrix(starting.values, nrow=1, dimnames=list(NULL, names(starting.values)))
         }
 
-        if (class(starting.values)=='matrix' ||
-            (class(starting.values)=='array' && length(dim(starting.values))==2))
+        if (is(starting.values,'matrix') ||
+            (is(starting.values,'array') && length(dim(starting.values))==2))
         {
             if (is.null(dimnames(starting.values)[[2]]))
             {
@@ -462,7 +462,7 @@ parse.mcmc.arguments <- function(control,
     }
     else
     {
-        if (all(class(prior.mcmc) != 'mcmcsim'))
+        if (!is(prior.mcmc, 'mcmcsim'))
             stop("prior.mcmc must be an object of class 'mcmcsim'")
 
         n.chains = prior.mcmc@n.chains

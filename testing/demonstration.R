@@ -2,14 +2,16 @@
 library(ggplot2)
 
 #The two packages I have written
-library(mcmc.sim) #runs the MCMC
-library(distributions) #defines distributions as objects - handy for processing results (and potentially defining priors)
+library(bayesian.simulations) #runs the MCMC
+library(distributions) # defines distributions as objects - handy for processing results (and potentially defining priors)
+                        # not strictly required to run the mcmc
 
 HAVE.NOT.INSTALLED.PACKAGES = F #This is what you need to do to install my packages
 if (HAVE.NOT.INSTALLED.PACKAGES)
 {
-    install.packages('distributions_package/distributions_0.1.0.tar.gz', type='source')
-    install.packages('mcmc.sim_0.1.0.tar.gz', type='source')
+    library(devtools)
+    install_github(repo='tfojo1/distributions')
+    install_github(repo='tfojo1/bayesian.simulations')
 }
 
 ##--------------------##
@@ -24,7 +26,7 @@ set.seed = 898798798
 ##-- SIMULATE 'TRUE' DATA TO FIT TO --##
 ##------------------------------------##
 
-# Make up some true data we are fitting to
+# Make up some 'true' data we are fitting to
 YEARS = 2010:2020
 NOTIFICATIONS = rnorm(n=length(YEARS), mean=200 - 5*(YEARS-2010), sd=10)
 print(qplot(YEARS, NOTIFICATIONS, geom='line') + ggtitle("Our 'True' Data to fit to"))
@@ -35,8 +37,13 @@ print(qplot(YEARS, NOTIFICATIONS, geom='line') + ggtitle("Our 'True' Data to fit
 ##------------------------------------##
 
 # Defined a toy simulation function
+# - take a vector of parameters as input
+# - returns a simulation object - however we want to define it
+#
 # This just projects a line based off two parameters - slope and intercept - and says that the simulated
 #  notifications are whatever is produced from that linear model
+# In this case, the simulation object is a list where each value is the 'simulated' notifications
+#  for a year
 run.simulation = function(parameters)
 {
     list(simulated.notifications=parameters['intercept'] + parameters['slope'] * (YEARS-2010))
@@ -84,6 +91,7 @@ log.likelihood = function(sim)
 ##-- RUN THE MCMC --##
 ##------------------##
 
+
 ctrl = create.adaptive.blockwise.metropolis.control(var.names=c('intercept','slope'),
                                                     simulation.function = run.simulation,
                                                     log.prior.distribution = log.prior,
@@ -99,40 +107,46 @@ n.chains = 4
 starting.values = cbind(intercept=rnorm(n.chains, 250, 50),
                         slope=rnorm(n.chains, 0, 25))
 
-RUN.ALL.FOUR.AT.ONCE = T #just to demonstrate you can run these on parallel cores with one call
+RUN.ALL.FOUR.AT.ONCE = F #just to demonstrate you can run these on parallel cores with one call
                          # or separately and then merge later
 N.ITER = 5000
 
-CACHE.DIR = '../test_cache'
+CACHE.DIR = '../demonstration_cache'
 if (RUN.ALL.FOUR.AT.ONCE) #on parallel cores
 {
     mcmc = run.mcmc(ctrl,
                     n.iter=N.ITER,
                     starting.values=starting.values,
                     update.frequency=1000,
-                    cache.dir = CACHE.DIR,
-                    cache.frequency=100)
+                    cache.dir = CACHE.DIR, #this caches as you go, so you can recover if you crash, or 'peek' in
+                    cache.frequency=500) #how often to write to a cache
 }
-if (!RUN.ALL.FOUR.AT.ONCE)
-{
-    mcmc1 = run.mcmc(ctrl,
-                     n.iter=N.ITER,
-                     starting.values = starting.values[1,],
-                     update.frequency = 1000)
-    mcmc2 = run.mcmc(ctrl,
-                     n.iter=N.ITER,
-                     starting.values = starting.values[2,],
-                     update.frequency = 1000)
-    mcmc3 = run.mcmc(ctrl,
-                     n.iter=N.ITER,
-                     starting.values = starting.values[3,],
-                     update.frequency = 1000)
-    mcmc4 = run.mcmc(ctrl,
-                     n.iter=N.ITER,
-                     starting.values = starting.values[4,],
-                     update.frequency = 1000)
 
-    mcmc = mcmc.merge.parallel(mcmc1, mcmc2, mcmc3, mcmc4)
+if (!RUN.ALL.FOUR.AT.ONCE) #we'll do this using a disk cache
+{
+    #this saves to a cache
+    create.mcmc.cache(dir=CACHE.DIR,
+                      control=ctrl,
+                      n.iter=N.ITER,
+                      starting.values = starting.values,
+                      cache.frequency = 500)
+
+    #This is how you could parallelize on a cluster or computer:
+    # instead of making each of these calls in serial, you could make one call from each process
+    run.mcmc.from.cache(dir=CACHE.DIR,
+                        chains=1,
+                        update.frequency = 1000) #how often to print updates
+    run.mcmc.from.cache(dir=CACHE.DIR,
+                        chains=2,
+                        update.frequency = 1000) #how often to print updates
+    run.mcmc.from.cache(dir=CACHE.DIR,
+                        chains=3,
+                        update.frequency = 1000) #how often to print updates
+    run.mcmc.from.cache(dir=CACHE.DIR,
+                        chains=4,
+                        update.frequency = 1000) #how often to print updates
+
+    mcmc = assemble.mcmc.from.cache(dir=CACHE.DIR)
 }
 
 #If you want the MCMC to cache to the disk as it goes, use arguments
@@ -151,7 +165,7 @@ print(get.rhats(mcmc))
 ##-----------------------------------------------------------------##
 
 simset = extract.simset(mcmc)
-#This object now contains the set of all simulations from the MCMC
+#This S4 object now contains the set of all simulations from the MCMC
 # We can do fun stuff like this:
 
 #Get the model simulated true notifications
@@ -175,11 +189,11 @@ df$year = YEARS
 df$type = 'Model'
 df = rbind(df,
            data.frame(value=NOTIFICATIONS,
-                      ci.lower=NA,
-                      ci.upper=NA,
+                      lower=NA,
+                      upper=NA,
                       year=YEARS,
                       type='Truth'))
-print(ggplot(df, aes(year, value, ymin=ci.lower, ymax=ci.upper, color=type, fill=type)) +
+print(ggplot(df, aes(year, value, ymin=lower, ymax=upper, color=type, fill=type)) +
     geom_ribbon(alpha=0.2) + geom_line(size=1) + geom_point(size=5) +
         ggtitle("Simulated Notifications (mean, 95% CI) vs Truth") + ylab("Notifications") + xlab('Year'))
 
