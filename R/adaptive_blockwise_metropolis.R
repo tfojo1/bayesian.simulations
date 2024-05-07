@@ -361,7 +361,9 @@ function(control,
     ##-- Preallocate Data Structures --##
     ##---------------------------------##
 
-    n.keep = max(0,floor((n.iter-to.burn.this.time)/control@thin))
+   # n.keep = max(0,floor((n.iter-to.burn.this.time)/control@thin))
+    keep.mask = ( (prior.iterations - control@burn + (1:n.iter)) %% control@thin ) == 0
+    n.keep = sum(keep.mask)
 
     rv = new('mcmcsim',
              model=control,
@@ -385,6 +387,7 @@ function(control,
 
     #-- Record start time --#
     iter.start.time = Sys.time()
+    keep.index = 1
     for (iter.inc in (1:n.iter))
     {
         #-- Set up iteration indexing --#
@@ -395,7 +398,7 @@ function(control,
         #total.iter.inc = iter.inc plus the number of prior iterations we have run this time around
         iter = prior.iterations + iter.inc
         iter.after.burn = iter - control@burn
-        keep.index = floor((iter.inc - to.burn.this.time) / control@thin)
+        #keep.index = floor((iter.inc - to.burn.this.time) / control@thin)
         total.iter.inc = prior.n.iter + iter.inc
 
         #-- Get the block --#
@@ -645,7 +648,8 @@ function(control,
             chain.state@first.step.for.iter = as.integer(NA)
         }
 
-        if (iter > control@burn && (iter.after.burn %% control@thin)==0) #Store the current state
+        #if (iter > control@burn && (iter.after.burn %% control@thin)==0) #Store the current state
+        if (keep.mask[iter.inc])
         {
             # Store sim index
             if (is.na(current.sim.index)) #store the simulation, as we have not before
@@ -670,6 +674,8 @@ function(control,
             # Store run.times and reset in chain state
             rv@run.times[1,keep.index] = chain.state@run.time
             chain.state@run.time = as.numeric(0)
+
+            keep.index = keep.index + 1
         }
 
     }
