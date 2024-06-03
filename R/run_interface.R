@@ -58,7 +58,9 @@ run.mcmc <- function(control,
         cores = min(cores, mcmc.arguments$n.chains)
 
         #-- Set up output stream --#
-        if (mcmc.arguments$n.chains==1)
+        if (update.detail=='none')
+            initial.message = NULL
+        else if (mcmc.arguments$n.chains==1)
             initial.message = paste0("RUNNING 1 CHAIN WITH ", format(n.iter, big.mark=','), " ITERATIONS:")
         else
             initial.message = paste0("RUNNING ", mcmc.arguments$n.chains, " CHAINS WITH ", format(n.iter, big.mark=','), " ITERATIONS EACH:")
@@ -243,7 +245,9 @@ run.mcmc.from.cache <- function(dir,
     cores = min(cores, length(chains))
 
     #-- Set up output stream --#
-    if (length(chains)==1)
+    if (update.detail=='none')
+        initial.message = NULL
+    else if (length(chains)==1)
         initial.message = paste0("RUNNING CHAIN ", chains, ":")
     else if (all(sort(chains)==(1:length(chains))))
         initial.message = paste0("RUNNING ", length(chains), " CHAINS: ")

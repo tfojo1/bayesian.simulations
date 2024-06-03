@@ -95,7 +95,8 @@ get.default.output.stream <- function(user.specified,
     }
 
     stream=create.output.stream(dst=dst, use.html=is.html, use.viewer=F, print.chain=n.chains>1)
-    stream(initial.message)
+    if (!is.null(initial.message))
+        stream(initial.message)
 
     is.rstudio = Sys.getenv("RSTUDIO")==1 || .Platform$GUI == "RStudio"
     if (is.rstudio && is.html)
