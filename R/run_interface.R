@@ -60,14 +60,18 @@ run.mcmc <- function(control,
         #-- Set up output stream --#
         if (update.detail=='none')
             initial.message = NULL
-        else if (mcmc.arguments$n.chains==1)
-            initial.message = paste0("RUNNING 1 CHAIN WITH ", format(n.iter, big.mark=','), " ITERATIONS:")
         else
-            initial.message = paste0("RUNNING ", mcmc.arguments$n.chains, " CHAINS WITH ", format(n.iter, big.mark=','), " ITERATIONS EACH:")
-        initial.message = paste0(paste0(rep('-', nchar(initial.message)), collapse=''), '\n',
-                                 initial.message,'\n',
-                                 paste0(rep('-', nchar(initial.message)), collapse=''),
-                                 '\n')
+        {
+            if (mcmc.arguments$n.chains==1)
+                initial.message = paste0("RUNNING 1 CHAIN WITH ", format(n.iter, big.mark=','), " ITERATIONS:")
+            else
+                initial.message = paste0("RUNNING ", mcmc.arguments$n.chains, " CHAINS WITH ", format(n.iter, big.mark=','), " ITERATIONS EACH:")
+            initial.message = paste0(paste0(rep('-', nchar(initial.message)), collapse=''), '\n',
+                                     initial.message,'\n',
+                                     paste0(rep('-', nchar(initial.message)), collapse=''),
+                                     '\n')
+        }
+
         output.stream = get.default.output.stream(user.specified=output.file,
                                                   n.chains=mcmc.arguments$n.chains,
                                                   initial.message=initial.message)
@@ -247,17 +251,21 @@ run.mcmc.from.cache <- function(dir,
     #-- Set up output stream --#
     if (update.detail=='none')
         initial.message = NULL
-    else if (length(chains)==1)
-        initial.message = paste0("RUNNING CHAIN ", chains, ":")
-    else if (all(sort(chains)==(1:length(chains))))
-        initial.message = paste0("RUNNING ", length(chains), " CHAINS: ")
     else
-        initial.message = paste0("RUNNING CHAINS ",
-                                 paste0(chains, collapse=', '), ":")
-    initial.message = paste0(paste0(rep('-', nchar(initial.message)), collapse=''), '\n',
-                             initial.message,'\n',
-                             paste0(rep('-', nchar(initial.message)), collapse=''),
-                             '\n')
+    {
+        if (length(chains)==1)
+            initial.message = paste0("RUNNING CHAIN ", chains, ":")
+        else if (all(sort(chains)==(1:length(chains))))
+            initial.message = paste0("RUNNING ", length(chains), " CHAINS: ")
+        else
+            initial.message = paste0("RUNNING CHAINS ",
+                                     paste0(chains, collapse=', '), ":")
+        initial.message = paste0(paste0(rep('-', nchar(initial.message)), collapse=''), '\n',
+                                 initial.message,'\n',
+                                 paste0(rep('-', nchar(initial.message)), collapse=''),
+                                 '\n')
+    }
+
     output.stream = get.default.output.stream(user.specified=output.file,
                                               n.chains=length(chains),
                                               initial.message=initial.message)
