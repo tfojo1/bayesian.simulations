@@ -441,7 +441,7 @@ parse.mcmc.arguments <- function(control,
         {
             if (is.null(dimnames(starting.values)[[2]]))
             {
-                if (dim(starting.values)[2] != control@n.vars)
+                if (dim(starting.values)[2] != control@n.var)
                     stop("Starting values must have ",
                          control@n.var, " ",
                          col.or.val, ifelse(control@n.var==1,'','s'),
