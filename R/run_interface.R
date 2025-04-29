@@ -87,7 +87,9 @@ run.mcmc <- function(control,
                                   update.detail=update.detail,
                                   chain=chain,
                                   output.stream=os)
-            os("DONE. Total runtime was ", get.timespan.text(as.numeric(difftime(Sys.time(), start.time, units='secs'))), '\n')
+            if (update.detail!='none')
+                os("DONE. Total runtime was ", get.timespan.text(as.numeric(difftime(Sys.time(), start.time, units='secs'))), '\n')
+
             mcmc
         })
 
