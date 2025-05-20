@@ -418,7 +418,7 @@ function(control,
             {
                 # Acceptance rate update
                 total.n.accepted = prior.n.accepted + sum(rv@n.accepted.in.burn, na.rm=T) +
-                    sum(rv@n.accepted, na.rm=t) + sum(chain.state@n.accepted, na.rm=T)
+                    sum(rv@n.accepted, na.rm=T) + sum(chain.state@n.accepted, na.rm=T)
                 to.print=paste0(to.print, "  ",
                     round(100*total.n.accepted/(total.iter.inc-1)),
                     "% (",
