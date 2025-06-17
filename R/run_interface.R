@@ -21,6 +21,7 @@ run.mcmc <- function(control,
                      merge.with.prior.mcmc=T,
                      cores = parallel::detectCores(),
                      remove.cache.when.done=T,
+                     return.mcmc.from.cache=F,
                      output.file='')
 {
     if (!is.na(cache.frequency) && (is.null(cache.dir) || is.na(cache.dir) || cache.dir==''))
@@ -39,7 +40,8 @@ run.mcmc <- function(control,
                             merge.with.prior.mcmc=merge.with.prior.mcmc,
                             cores=cores,
                             remove.cache.when.done=remove.cache.when.done,
-                            output.file=output.file)
+                            output.file=output.file,
+                            return.mcmc=return.mcmc.from.cache)
     else
     {
         # Parse the arguemnts to start the mcmc
@@ -126,7 +128,8 @@ run.mcmc.with.cache <- function(control,
                      merge.with.prior.mcmc=T,
                      cores = parallel::detectCores(),
                      remove.cache.when.done=T,
-                     output.file='')
+                     output.file='',
+                     return.mcmc=F)
 {
     if (is.null(cache.dir) || is.na(cache.dir) || cache.dir=='')
         stop("cache.dir is missing")
@@ -150,7 +153,8 @@ run.mcmc.with.cache <- function(control,
                         update.detail=update.detail,
                         cores=cores,
                         remove.cache.when.done=remove.cache.when.done,
-                        output.file=output.file)
+                        output.file=output.file,
+                        return.mcmc=return.mcmc)
 }
 
 #'@title Set up a cache for running an MCMC from
@@ -227,7 +231,8 @@ run.mcmc.from.cache <- function(dir,
                                 update.detail=c('none','low','med','high')[3],
                                 cores = parallel::detectCores(),
                                 remove.cache.when.done=F,
-                                output.file='')
+                                output.file='',
+                                return.mcmc=F)
 {
     #-- Load cache control --#
     if (!cache.exists(dir))
@@ -287,7 +292,10 @@ run.mcmc.from.cache <- function(dir,
 
     # Aggregate it together
 
-    assemble.mcmc.from.cache(dir, chains=chains, allow.incomplete = F, remove.cache = remove.cache.when.done)
+    if (return.mcmc)
+        assemble.mcmc.from.cache(dir, chains=chains, allow.incomplete = F, remove.cache = remove.cache.when.done)
+    else
+        invisible(NULL)
 }
 
 #'@title Delete previously set-up cache for running MCMC
