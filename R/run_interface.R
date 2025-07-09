@@ -22,10 +22,14 @@ run.mcmc <- function(control,
                      cores = parallel::detectCores(),
                      remove.cache.when.done=T,
                      return.mcmc.from.cache=F,
-                     output.file='')
+                     output.file='',
+                     seed = runif(1, -.Machine$integer.max, .Machine$integer.max))
 {
     if (!is.na(cache.frequency) && (is.null(cache.dir) || is.na(cache.dir) || cache.dir==''))
         stop("A cache.frequency has been specified, but no cache.dir has been given. Use cache.frequency=NA if no cache is desired, or specify cache.dir if cache is desired")
+
+    if (!is.numeric(seed) || length(seed)!=1 || is.na(seed))
+        stop(paste0("'seed' must be a single , non-NA numeric value"))
 
     if (!is.na(cache.frequency) && !is.null(cache.dir) && !is.na(cache.dir))
         run.mcmc.with.cache(control=control,
@@ -41,7 +45,8 @@ run.mcmc <- function(control,
                             cores=cores,
                             remove.cache.when.done=remove.cache.when.done,
                             output.file=output.file,
-                            return.mcmc=return.mcmc.from.cache)
+                            return.mcmc=return.mcmc.from.cache,
+                            seed = seed)
     else
     {
         # Parse the arguemnts to start the mcmc
@@ -88,7 +93,8 @@ run.mcmc <- function(control,
                                   update.frequency=update.frequency,
                                   update.detail=update.detail,
                                   chain=chain,
-                                  output.stream=os)
+                                  output.stream=os,
+                                  seed = seed)
             if (update.detail!='none')
                 os("DONE. Total runtime was ", get.timespan.text(as.numeric(difftime(Sys.time(), start.time, units='secs'))), '\n')
 
@@ -129,14 +135,19 @@ run.mcmc.with.cache <- function(control,
                      cores = parallel::detectCores(),
                      remove.cache.when.done=T,
                      output.file='',
-                     return.mcmc=F)
+                     return.mcmc=F,
+                     seed = runif(1, -.Machine$integer.max, .Machine$integer.max))
 {
     if (is.null(cache.dir) || is.na(cache.dir) || cache.dir=='')
         stop("cache.dir is missing")
+
     if (is.null(cache.frequency) || is.na(cache.frequency) ||
         (!is(cache.frequency, 'integer') && !is(cache.frequency, 'numeric')) ||
         cache.frequency<1)
         stop("cache.frequency must be an integer >= 1")
+
+    if (!is.numeric(seed) || length(seed)!=1 || is.na(seed))
+        stop(paste0("'seed' must be a single , non-NA numeric value"))
 
     create.mcmc.cache(dir=cache.dir,
                       control=control,
@@ -145,7 +156,8 @@ run.mcmc.with.cache <- function(control,
                       prior.mcmc=prior.mcmc,
                       cache.frequency=cache.frequency,
                       allow.overwrite.cache=allow.overwrite.cache,
-                      merge.with.prior.mcmc=merge.with.prior.mcmc)
+                      merge.with.prior.mcmc=merge.with.prior.mcmc,
+                      seed=seed)
 
     run.mcmc.from.cache(dir=cache.dir,
                         chains=NULL,
@@ -173,13 +185,16 @@ create.mcmc.cache <- function(dir,
                               prior.mcmc=NULL,
                               cache.frequency=1000,
                               allow.overwrite.cache=F,
-                              merge.with.prior.mcmc=T
-)
+                              merge.with.prior.mcmc=T,
+                              seed = runif(1, -.Machine$integer.max, .Machine$integer.max))
 {
     # Parse the arguemnts to start the mcmc
     mcmc.arguments = parse.mcmc.arguments(control,
                                           starting.values=starting.values,
                                           prior.mcmc=prior.mcmc)
+
+    if (!is.numeric(seed) || length(seed)!=1 || is.na(seed))
+        stop(paste0("'seed' must be a single , non-NA numeric value"))
 
     if (!merge.with.prior.mcmc)
         prior.mcmc = NULL

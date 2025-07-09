@@ -28,7 +28,8 @@ setClass('mcmcsim_cache_chain_control',
              chunk.done='logical',
              n.accepted.so.far='integer',
              total.runtime='numeric',
-             chain.state='mcmcsim_chainstate'
+             chain.state='mcmcsim_chainstate',
+             seeds='integer'
          ))
 
 ##--------------------##
@@ -185,7 +186,8 @@ do.create.cache <- function(dir,
                             chain.states,
                             n.iter,
                             cache.frequency,
-                            prior.mcmc)
+                            prior.mcmc,
+                            seed)
 {
     #-- Check Cache Frequency --#
     if (is.null(cache.frequency) ||
@@ -218,7 +220,8 @@ do.create.cache <- function(dir,
 
     #-- Set up the Chain Control Objects --#
     chain.controls = do.create.chain.cache.controls(global.control, chains=1:global.control@n.chains,
-                                   chain.states=chain.states)
+                                   chain.states=chain.states,
+                                   seed=seed)
 
     #-- Create the files and directories --#
     do.create.cache.from.controls(dir,
@@ -230,7 +233,8 @@ do.create.cache <- function(dir,
 
 
 do.create.chain.cache.controls <- function(global.control, chains,
-                                           chain.states)
+                                           chain.states,
+                                           seed)
 {
     num.to.save = sum(global.control@save.chunk)
     lapply(chains, function(chain){
@@ -239,6 +243,10 @@ do.create.chain.cache.controls <- function(global.control, chains,
 
         chunk.filenames = paste0('chain', chain, "_chunk", 1:global.control@n.chunks, '.Rdata')
         chunk.filenames[!global.control@save.chunk] = NA
+
+        seeds = as.integer(round(runif(global.control@n.chunks,
+                                       -.Machine$integer.max,
+                                       .Machine$integer.max)))
 
         new('mcmcsim_cache_chain_control',
             global.id = global.control@id,
@@ -249,7 +257,8 @@ do.create.chain.cache.controls <- function(global.control, chains,
             chunk.done=rep(F, global.control@n.chunks),
             n.accepted.so.far=as.integer(0),
             total.runtime=0,
-            chain.state=chain.states[[chain]])
+            chain.state=chain.states[[chain]],
+            seeds=seeds)
     })
 }
 
@@ -378,7 +387,8 @@ do.run.single.chain.with.cache <- function(dir,
                                         prior.run.time=chain.control@total.runtime,
                                         return.current.sim=T,
                                         chain=chain,
-                                        output.stream=output.stream)
+                                        output.stream=output.stream,
+                                        seed=chain.control@seeds[chunk])
 
         # Save MCMC to disk
         if (global.control@save.chunk[chunk])

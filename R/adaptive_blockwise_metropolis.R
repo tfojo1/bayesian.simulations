@@ -290,8 +290,11 @@ function(control,
          prior.run.time=0,
          return.current.sim=F,
          chain,
-         output.stream)
+         output.stream,
+         seed)
 {
+    set.seed(seed)
+
     total.start.time = Sys.time()
 
     ##--------------------------##
@@ -347,6 +350,8 @@ function(control,
     current.log.prior = log.prior(chain.state@current.parameters)
     if (current.log.prior == -Inf)
         stop("The log prior at the starting state evaluates to -Inf. You must pick another starting state.")
+    else if (current.log.prior == Inf)
+        stop("The log prior at the starting state evaluates to Inf. You must pick another starting state.")
 
     current.log.likelihood = control@log.likelihood(current.sim)
     current.sim.index = NA
@@ -355,6 +360,8 @@ function(control,
 
     if (current.log.likelihood==-Inf)
         stop("The log likelihood at the starting state evaluates to -Inf. You must pick another starting state.")
+    else if (current.log.likelihood==Inf)
+        stop("The log likelihood at the starting state evaluates to Inf. You must pick another starting state.")
 
 
     ##---------------------------------##
@@ -531,7 +538,8 @@ function(control,
             proposed.log.likelihood = control@log.likelihood(proposed.sim)
 
             #-- Compute the Acceptance Ratio --#
-            if (proposed.log.likelihood==-Inf && current.log.likelihood==-Inf)
+            if ((proposed.log.likelihood==-Inf && current.log.likelihood==-Inf) ||
+                (proposed.log.likelihood==Inf && current.log.likelihood==Inf))
                 log.acceptance.ratio = proposed.log.prior - current.log.prior
             else
                 log.acceptance.ratio = proposed.log.likelihood + proposed.log.prior -
@@ -558,6 +566,7 @@ function(control,
 
         #-- Accept or Reject --#
 
+tryCatch({
         if (accept)
         {
             # Update current state
@@ -571,6 +580,9 @@ function(control,
             # Update accepted counts
             chain.state@n.accepted[chain.state@block] = as.integer(1) + chain.state@n.accepted[chain.state@block]
         }
+}, error = function(e){
+    browser()
+})
 
         #-- Update iter counts in chain state --#
         if (iter.after.burn>0)

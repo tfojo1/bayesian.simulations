@@ -90,7 +90,8 @@ setGeneric("run.single.chain", function(control,
                                         prior.run.time=0,
                                         return.current.sim=F,
                                         chain,
-                                        output.stream)
+                                        output.stream,
+                                        seed)
 {
     standardGeneric("run.single.chain")
 })
