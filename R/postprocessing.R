@@ -383,7 +383,7 @@ check.chains <- function(mcmc, chains)
         !(is(chains, 'numeric') && all(round(chains)==chains)))
         stop(paste0("'chains' must be set of non-NA integers between 1 and ", mcmc@n.chains))
 
-    if (any(is.na(chains) || any(chains<1) || any(chains>mcmc@n.chains)))
+    if (any(is.na(chains)) || any(chains<1) || any(chains>mcmc@n.chains))
         stop(paste0("'chains' must be set of non-NA integers between 1 and ", mcmc@n.chains))
 
     unique(chains)
